@@ -1,0 +1,14 @@
+dpsctrl (2.0) stable; urgency=low
+
+  * New upstream version!
+  * Fixed bug(s) which made dpsctrl crash when compiled with curses
+    support and not using curses mode at all!
+
+ -- Patrik Schindler <poc@leela.pocnet.net>  Sun, 17 Sep 2006 20:42:05 +0200
+
+dpsctrl (1.6-1) stable; urgency=low
+
+  * Initial Release.
+
+ -- Patrik Schindler <poc@pocnet.net>  Sat, 15 Oct 2005 14:00:21 +0200
+

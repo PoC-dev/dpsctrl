@@ -1,0 +1,150 @@
+Übersetzte Protokollbeschreibung für die DPS-Netzgeräteserie von Voltcraft
+--------------------------------------------------------------------------
+$Id: LIESMICH.protokoll,v 1.4 2006/08/10 14:39:44 poc Exp $
+
+DPS-2010, Best-Nr. 513020
+DPS-4005, Best-Nr. 512020
+DPS-8003, Best-Nr. 513021
+
+Originaldoku: http://www.produktinfo.conrad.com/datenblaetter/500000-524999/513020-da-01-en-Schnittstellenbeschreibung_DPS-2010PFC.pdf
+
+1. Schnittstelle
+----------------
+
+Die Schnittstelle ist eine DB9-Buchse mit Modembelegung, es genügt also ein
+handelsübliches Modemkabel zum Anschluß an den PC.
+
+Pinbelegung:
+1: NC          6: NC
+2: TxD         7: NC
+3: RxD         8: NC
+4: 12V         9: NC
+5: Gnd
+
+Die Schnittstelle muß mit 1200bps, keine Parität, 8 Datenbits, ein Stopbit
+betrieben werden (1200-N-8-1). Die Zustandsdaten des Netzteils werden
+fortlaufend mit dieser Geschwindigkeit an den Host gesendet.
+
+
+2. Protokoll DPS -> PC
+----------------------
+
+Die Zustandsdaten werden als 15-Byte Paket mit je 8 Bit pro Byte gesendet.
+Dabei beginnt ein gültiges Paket immer mit der Sequenz 0xEB, 0x90.
+
+Byte 0: 0xEB   Byte 8: Ulim_h           x_h: Highbyte
+Byte 1: 0x90   Byte 9: Ulim_l           x_l: Lowbyte
+Byte 2: Uh     Byte10: Ilim_h
+Byte 3: Ul     Byte11: Ilim_l
+Byte 4: Ih     Byte12: Plim_h
+Byte 5: Il     Byte13: Plim_l
+Byte 6: Ph     Byte14: Flags
+Byte 7: Pl
+
+Nach dem Zusammenfügen der High- und Lowbytes muß das Ergebnis noch divdiert
+werden, um eine mit dem Frontpanel identische Anzeige zu erhalten:
+U / 100
+I / 1000
+P / 10
+Die Bytes 8-13 beinhalten die jeweils am Netzgerät eingestellten Limits, für
+diese gilt das Gleiche.
+
+Wichtig: P_h/l und Plim_h/l sind im Gegensatz zu den anderen Werten BCD kodiert
+(d.h. jeweils 4 Bit entsprechen einer Dezimalziffer) und müssen entsprechend
+zusammengefügt werden.
+
+Byte 14 - Flags:
+
+Bit0: Immer 0
+Bit1: Steuerung Lokal/PC
+Bit2: Ausgangsrelais Aus/An
+Bit3: Übertemperatur
+Bit4: P-Begrenzung nicht gewählt
+Bit5: I-Begrenzung nicht gewählt
+Bit6: U-Begrenzung nicht gewählt
+Bit7: Grob/Feinjustage
+
+Zusammenhang zwischen Bit 7 und Schrittweite der einzelnen Funktionen:
+
+Taste |   N   |   F
+------+-------+-------
+  u   | 1  V  | 0,01V
+  U   | 1  V  | 1   V
+  I   | 0,1A  | 0,01A
+  P   | 1  W  | 1   W
+
+
+3. Protokoll PC -> DPS
+----------------------
+Die Steuerungsdaten werden in einem 4-Byte Paket mit je 8 Bit pro Byte
+gesendet. Dabei beginnt ein gültiges Paket immer mit der Sequenz 0xEB, 0x90.
+
+Die Steuerung via Seriellport geschieht analog zur Steuerung am Gerät selbst,
+nähere Erklärung siehe 3.3.
+
+
+3.1. Tastendruck
+----------------
+
+Byte 0: 0xEB
+Byte 1: 0x90
+Byte 2: 0xAA
+Byte 3: Keycode
+
+Taste   |  U    u    N    I   ENT   F     P    CE  I/O
+--------+----------------------------------------------
+Keycode | 0x0  0x1  0x2  0x4  0x5  0x6   0x8  0x9  0xC
+
+Die "Taste" entspricht dabei der Taste auf dem Frontpanel. Hier das Destillat
+aus der Bedienungsanleitung, was zum Verständnis wichtig ist:
+
+- Mit den Tasten U, I und P kann man ein Limit setzen, welches man mit ENT
+  bestätigen muß. Die Ausgangsspannung nimmt dabei *nicht* automatisch den
+  Wert des eventuellen Limits an; es sei denn, das Limit ist auf einen
+  geringeren Wert eingestellt als die Ausgangsspannung.
+  Das Limitieren von P entspricht einer umgerechneten Limitierung von I,
+  d. h. U bleibt konstant.
+- CE ist eine Art Limit-Undo-Taste: Wenn man ein Limit verstellt hat, kann man
+  es durch Drücken dieser Taste auf den vorigen Wert setzen.
+- Mit der Taste u schaltet man auf die "normale" Spannungseinstellung zurück.
+- Mit der Taste F schaltet man um auf Feinjustierung.
+- Mit der Taste N schaltet man wieder auf Grobjustierung.
+- Die Taste I/O schaltet das Ausgangsrelais.
+
+
+3.2. Einstellrad
+----------------
+
+Byte 0: 0xEB
+Byte 1: 0x90
+Byte 2: Drehrichtung
+Byte 3: Schritte
+
+Drehrichtung Links (verringern): 0xCC
+Drehrichtung Rechts (erhöhen):   0x55
+Schritte: Entspricht der Rastung des Einstellrades.
+
+
+3.3. Beispiele
+--------------
+
+Um das Limit für den Strom um 700mA zu verringern, müssen am Netzgerät folgende
+Schritte durchgeführt werden:
+
+Manuelle Bedienung                       | Host sendet folgende Bytes
+-----------------------------------------+----------------------------
+Taste N drücken                          | 0xEB 0x90 0xAA 0x02
+Taste I drücken                          | 0xEB 0x90 0xAA 0x04
+Einstellrad 10 Rasten nach links drehen  | 0xEB 0x90 0xCC 0x07
+Taste ENT drücken                        | 0xEB 0x90 0xAA 0x05
+
+Spannung um 10,6V erhöhen:
+
+Manuelle Bedienung                       | Host sendet folgende Bytes
+-----------------------------------------+----------------------------
+Taste u drücken                          | 0xEB 0x90 0xAA 0x01
+Einstellrad 10 Rasten nach rechts drehen | 0xEB 0x90 0x55 0x0A
+Taste F drücken                          | 0xEB 0x90 0xAA 0x06
+Einstellrad 60 Rasten nach rechts drehen | 0xEB 0x90 0x55 0x3C
+Taste N drücken                          | 0xEB 0x90 0xAA 0x02
+

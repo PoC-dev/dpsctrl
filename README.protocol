@@ -1,0 +1,148 @@
+Translated protocol description for the DPS power supply series by Voltcraft
+----------------------------------------------------------------------------
+$Id: README.protocol,v 1.6 2011/10/27 19:23:40 poc Exp $
+
+DPS-2010, Nr. 513020
+DPS-4005, Nr. 512020
+DPS-8003, Nr. 513021
+
+Original documentation: http://www.produktinfo.conrad.com/datenblaetter/500000-524999/513020-da-01-en-Schnittstellenbeschreibung_DPS-2010PFC.pdf
+
+1. Serial Port
+--------------
+
+The serial port ist a DB9 female connector with modem-like pinpout. So you can
+use any modem cable to hook the DPS up to your PC.
+
+Pinout:
+1: NC          6: NC
+2: TxD         7: NC
+3: RxD         8: NC
+4: 12V         9: NC
+5: Gnd
+
+The port must be initialized to 1200bps, no parity, 8 data bits and one stop
+bit (1200-N-8-1). The DPS sends the internal data the whole time.
+
+
+2. Protocol DPS -> PC
+---------------------
+
+The DPS sends it's internal data as 15-Byte packets, eight bits per byte.
+Every valid packet begins with the sequence 0xEB, 0x90.
+
+Byte 0: 0xEB   Byte 8: Ulim_h           x_h: Highbyte
+Byte 1: 0x90   Byte 9: Ulim_l           x_l: Lowbyte
+Byte 2: Uh     Byte10: Ilim_h
+Byte 3: Ul     Byte11: Ilim_l
+Byte 4: Ih     Byte12: Plim_h
+Byte 5: Il     Byte13: Plim_l
+Byte 6: Ph     Byte14: Flags
+Byte 7: Pl
+
+After reassembling high- and lowbytes, one must divide the result according
+to the following table, to get identical readings to the DPS front panel:
+U / 100
+I / 1000
+P / 10
+Bytes 8-13 carry the actual limit values for U, I and P, they also must be
+divided as shown.
+
+Important: The output of P_h/l and Plim_h/l is BCD encoded. A digit is composed
+out of 4 Bits.
+
+
+Byte 14 - Flags:
+
+Bit0: 0
+Bit1: DPS control local/PC
+Bit2: Outputrelais off/on
+Bit3: Overtemp
+Bit4: P-Limit not chosen
+Bit5: I-Limit not chosen
+Bit6: U-Limit not chosen
+Bit7: Coarse/Fine
+
+The stepwidth for coarse/fine mode is shown below.
+
+ Key  |   N   |   F
+------+-------+-------
+  u   | 1  V  | 0,01V
+  U   | 1  V  | 1   V
+  I   | 0,1A  | 0,01A
+  P   | 1  W  | 1   W
+
+
+3. Protocol PC -> DPS
+---------------------
+
+Control data must be sent as a four byte packet (8 bits each). Every valid
+packet begins with the sequence 0xEB, 0x90.
+
+Controlling the DPS remotely is very similar to controlling the DPS via it's
+local keys. See 3.3 for examples.
+
+
+3.1. Keypresses
+---------------
+
+Byte 0: 0xEB
+Byte 1: 0x90
+Byte 2: 0xAA
+Byte 3: Keycode
+
+Key     |  U    u    N    I   ENT   F     P    CE  I/O
+--------+----------------------------------------------
+Keycode | 0x0  0x1  0x2  0x4  0x5  0x6   0x8  0x9  0xC
+
+The "Key" has the same name as the key on the front panel. Here's a short
+summary of the manual to get a better knowledge why things are a bit
+complicated.
+
+- Keys U, I and P are used to set a limit value via the jog dial. Each value
+  must be acknowledged with ENT. The output voltage will NOT automatically
+  increased to the set limit, one has to set it separately.
+  Limiting P is really a calculated limit of I. U stays constant.
+- CE is some kind of a limit-undo key. If you accidentally changed a
+  limit-value, press CE to get the last value back.
+- Key u switches to normal behaviour: Setting output voltage.
+- Key F switches to fine adjust mode.
+- Key N switches to coarse adjust mode.
+- Key I/O toggles the output relais.
+
+
+3.2. Jog dial
+-------------
+
+Byte 0: 0xEB
+Byte 1: 0x90
+Byte 2: Direction
+Byte 3: Steps
+
+Turn left (lower value):  0xCC
+Turn right (raise value): 0x55
+Steps: Same stepping as the jog dial.
+
+
+3.3. Samples
+------------
+
+To lower the limit for the current to 700mA, these things must be done:
+
+Manual operation                         | Host sends the following Bytes
+-----------------------------------------+-------------------------------
+Press key N                              | 0xEB 0x90 0xAA 0x02
+Press key I                              | 0xEB 0x90 0xAA 0x04
+Dial jog 10 steps to the left            | 0xEB 0x90 0xCC 0x07
+Press ENT key                            | 0xEB 0x90 0xAA 0x05
+
+Raise output voltage about 10.6V:
+
+Manual operation                         | Host sends the following Bytes
+-----------------------------------------+-------------------------------
+Press key u                              | 0xEB 0x90 0xAA 0x01
+Dial jog 10 steps to the right           | 0xEB 0x90 0x55 0x0A
+Press key F                              | 0xEB 0x90 0xAA 0x06
+Dial jog 60 times to the right           | 0xEB 0x90 0x55 0x3C
+Press key N                              | 0xEB 0x90 0xAA 0x02
+

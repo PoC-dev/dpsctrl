@@ -1,0 +1,67 @@
+$Id: README,v 1.8 2011/11/01 20:18:29 poc Exp $
+
+IMPORTANT
+=========
+This code does no longer compile out of the Box on a Debian 11 machine.
+I do no longer own the necessary DPS, so I am not interested in maintaining
+the code anymore.
+
+The source code has been available on Freshmeat.net for years, but I'm now
+publishing it on Github for completeness.
+
+poc@pocnet.net, 2022-07-05
+
+WHAT IT IS
+----------
+Dpsctrl may be used to read values and control parameters on Conrad
+Electronic's Voltcraft brand power supplies DPS-2010, DPS-4005 and DPS-8003. It
+also is usable with SNNT-2010pc, SNNT-4005pc and SNNT-8003pc PSUs. Thanks to
+Peter Schildmann for this feedback! You may use it interactive (in curses mode)
+or set your values via command line options (useful for batches).
+
+Beware, there seems to be an old release of the DPS-4005 with different serial
+pinout and a completely different protocol (ASCII based). Dpsctrl could *not*
+handle this device (yet - get me the protocol description and I'll try to
+implement this). Thanks to Volker Arndt for bringing this to my attention!
+
+Dpsctrl tries to open the (serial) device identified by the environment
+variable DPSDEVICE (full path). It should point to the device file with the dps
+connected to.
+If DPSDEVICE is not set, Dpsctrl per default tries to open /dev/dps which can
+be a symbolic link to the appropriate serial port device on your system. Since
+udev is now used in every recent distro, I recommend setting DPSDEVICE in
+your ~/.profile.
+
+INSTALLATION
+------------
+You normally need only to type "make" to make dpsctrl, then you may do a
+"make install" it with its Manpage into /usr/local. If you want it somewhere
+different, change DESTDIR in the Makefile.
+
+If you have trouble compiling dpsctrl, comment out the CURSESCFLAGS and
+CURSESLDFLAGS in the Makefile and try again. Please report a bug to
+poc@pocnet.net with some detail of your setup and any error messages you
+receive.
+
+USAGE
+-----
+See manpage for usage details.
+
+BEFORE-EOF
+----------
+Dpsctrl has been developed under Linux but should compile fine under any
+unix-like OS. It has been tested on a rather old 386DX40 machine with 8MB RAM,
+linux-1.1.59/glibc 4.5.26, a very ancient version of ncurses and a DPS-8003. I
+also compiled it on Solaris 2.7. It runs fine so far.
+
+To stay compatible with this old setup (a Slackware 2.1.0) I didn't use
+anything fancy up to version 2.0. Especially in curses mode: no setwbkg, no
+forms.
+
+Report Bugs, porting successes, questions, chocolate, pizza and other things to
+poc@pocnet.net.
+
+Dpsctrl is licensed to you under the terms of the GPL version 2 or higher, if
+applicable.
+
+PoC - 2011-11-01

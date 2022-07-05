@@ -1,0 +1,17 @@
+$Id: BUGS,v 1.6 2011/11/13 16:43:58 poc Exp $
+
+Problem: Sometimes, setting many parameters in one commandline fails. The DPS
+will then adjust to seemingly random values.
+
+Solution: This may be related to output buffering of the serial port. Call
+dpsctrl multiple times with less parameters to circumvent this.
+
+
+Problem: When setting the voltage limit to a value nearby the current output
+voltage, the actual output voltage suddenly jumps to a higher value.
+
+Solution: There's no real solution. This is a (known) bug in the DPS firmware.
+You can also trigger this bug from the front panel. Only solution is to avoid
+setting values so the bug will never get triggered. (Thanks to Peter Schildmann
+for bringing this to attention!) Actually I was not able to trigger this bug
+beyond a difference of about 1V.

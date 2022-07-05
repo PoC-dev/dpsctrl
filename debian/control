@@ -1,0 +1,15 @@
+Source: dpsctrl
+Section: tools
+Priority: optional
+Maintainer: Patrik Schindler <poc@pocnet.net>
+Build-Depends: debhelper (>= 4.0.0), libncurses5-dev
+Standards-Version: 3.6.1
+
+Package: dpsctrl
+Architecture: any
+Depends: dialog, ${shlibs:Depends}
+Description: Remote Control of DPS series power supplies
+ Dpsctrl may be used to read values and control parameters on Conrad
+ Electronic's Voltcraft brand power supplies DPS-2010, DPS-4005 and
+ DPS-8003. You may use it interactive (in curses mode) or set your values
+ via command line options (useful for batches).
